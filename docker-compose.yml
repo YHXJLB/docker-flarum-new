@@ -1,0 +1,30 @@
+services:
+  flarum:
+    image: ghcr.io/yhxjlb/docker-flarum-new:2.0
+    # 如需本地构建，取消下面两行注释（需先安装 Docker Buildx）
+    # build:
+    #   context: .
+    #   args:
+    #     FLARUM_VERSION: v2.0.0-rc.8
+    #     FLARUM_PHP: "8.4"
+    container_name: flarum
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: mariadb:11.8
+    container_name: flarum-db
+    environment:
+      MYSQL_DATABASE: flarum
+      MYSQL_USER: flarum
+      MYSQL_PASSWORD: flarum
+      MYSQL_ROOT_PASSWORD: flarum-root
+    volumes:
+      - ./db:/var/lib/mysql
+    restart: unless-stopped

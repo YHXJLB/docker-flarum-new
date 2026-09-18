@@ -1,5 +1,5 @@
 variable "DEFAULT_TAG" {
-  default = "flarum:local"
+  default = "ghcr.io/yhxjlb/docker-flarum-new:local"
 }
 
 // Special target: https://github.com/docker/metadata-action#bake-definition
@@ -25,8 +25,6 @@ target "image-all" {
   inherits = ["image"]
   platforms = [
     "linux/amd64",
-    "linux/arm/v6",
-    "linux/arm/v7",
     "linux/arm64"
   ]
 }

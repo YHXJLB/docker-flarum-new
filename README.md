@@ -1,284 +1,155 @@
-<p align="center"><a href="https://github.com/crazy-max/docker-flarum" target="_blank"><img height="128" src="https://raw.githubusercontent.com/crazy-max/docker-flarum/master/.github/docker-flarum.jpg"></a></p>
-
 <p align="center">
-  <a href="https://hub.docker.com/r/crazymax/flarum/tags?page=1&ordering=last_updated"><img src="https://img.shields.io/github/v/tag/crazy-max/docker-flarum?label=version&style=flat-square" alt="Latest Version"></a>
-  <a href="https://github.com/crazy-max/docker-flarum/actions?workflow=build"><img src="https://img.shields.io/github/actions/workflow/status/crazy-max/docker-flarum/build.yml?branch=master&label=build&logo=github&style=flat-square" alt="Build Status"></a>
-  <a href="https://hub.docker.com/r/crazymax/flarum/"><img src="https://img.shields.io/docker/stars/crazymax/flarum.svg?style=flat-square&logo=docker" alt="Docker Stars"></a>
-  <a href="https://hub.docker.com/r/crazymax/flarum/"><img src="https://img.shields.io/docker/pulls/crazymax/flarum.svg?style=flat-square&logo=docker" alt="Docker Pulls"></a>
-  <br /><a href="https://github.com/sponsors/crazy-max"><img src="https://img.shields.io/badge/sponsor-crazy--max-181717.svg?logo=github&style=flat-square" alt="Become a sponsor"></a>
-  <a href="https://www.paypal.me/crazyws"><img src="https://img.shields.io/badge/donate-paypal-00457c.svg?logo=paypal&style=flat-square" alt="Donate Paypal"></a>
+  <img height="128" src="https://flarum.org/img/logo.svg" alt="Flarum 2.0">
 </p>
 
-## About
+<p align="center">
+  <a href="https://github.com/YHXJLB/docker-flarum-new/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/YHXJLB/docker-flarum-new/build.yml?branch=master&label=build&logo=github&style=flat-square" alt="Build Status"></a>
+  <a href="https://github.com/YHXJLB/docker-flarum-new/pkgs/container/docker-flarum-new"><img src="https://img.shields.io/badge/registry-ghcr.io-blue?style=flat-square&logo=github" alt="GHCR"></a>
+  <a href="https://flarum.org/"><img src="https://img.shields.io/badge/flarum-2.0.0--rc.8-green?style=flat-square" alt="Flarum"></a>
+</p>
 
-Docker image for [Flarum](https://flarum.org/), the next-generation forum
-software that makes online discussion fun.
+## 关于
 
-> [!TIP] 
-> Want to be notified of new releases? Check out 🔔 [Diun (Docker Image Update Notifier)](https://github.com/crazy-max/diun)
-> project!
+基于 [crazy-max/docker-flarum](https://github.com/crazy-max/docker-flarum)（MIT）适配的
+**Flarum 2.0** Docker 镜像。沿用其镜像格式（Alpine + s6-overlay + nginx + php-fpm），
+但安装方式改为直接使用 Flarum 官方发布的 **完整包归档**（
+[flarum/installation-packages](https://github.com/flarum/installation-packages) 的
+`v2.0.0-rc.8` 完整包），以确定性地复现固定版本，而非构建时跑 composer。
 
-___
+> Flarum 2.0 目前处于 RC 阶段，API 已稳定，但正式稳定版发布前请先备份数据再上线。
 
-* [Features](#features)
-* [Build locally](#build-locally)
-* [Image](#image)
-* [Environment variables](#environment-variables)
-  * [General](#general)
-  * [Flarum](#flarum)
-  * [Sidecar cron](#sidecar-cron)
-  * [Database](#database)
-* [Volumes](#volumes)
-* [Ports](#ports)
-* [Usage](#usage)
-  * [Docker Compose](#docker-compose)
-  * [Command line](#command-line)
-* [Upgrade](#upgrade)
-* [Notes](#notes)
-  * [First launch](#first-launch)
-  * [Scheduler](#scheduler)
-  * [Manage extensions](#manage-extensions)
-  * [Sending mails with SMTP](#sending-mails-with-smtp)
-* [Contributing](#contributing)
-* [License](#license)
+## 特性
 
-## Features
+* 非 root 用户运行
+* 多平台镜像（amd64 / arm64，由 GitHub Actions 构建）
+* [s6-overlay](https://github.com/just-containers/s6-overlay/) 作为进程管理器
+* nginx + php84-fpm
+* 通过「sidecar」容器运行 Flarum 定时任务
+* 扩展通过 `/data/extensions/list` 持久化，容器重启自动重装
+* 通过 GitHub Actions 构建并推送至 GHCR
 
-* Run as non-root user
-* Multi-platform image
-* Cron tasks to run the Flarum scheduler as a "sidecar" container
-* [s6-overlay](https://github.com/just-containers/s6-overlay/) as process supervisor
-* [msmtpd SMTP relay](https://github.com/crazy-max/docker-msmtpd) image to send emails
-* [Traefik](https://github.com/containous/traefik-library-image) as reverse proxy and creation/renewal of Let's Encrypt certificates (see [this template](examples/traefik))
+## 镜像
 
-## Build locally
+| registry | 镜像 |
+| --- | --- |
+| GitHub Container Registry | `ghcr.io/yhxjlb/docker-flarum-new` |
 
-```shell
-git clone https://github.com/crazy-max/docker-flarum.git
-cd docker-flarum
+可用标签：`2.0`、`latest`、`master`、以及语义化版本标签。
 
-# Build image and output to docker (default)
-docker buildx bake
+## 环境变量
 
-# Build multi-platform image
-docker buildx bake image-all
-```
+### 通用
 
-## Image
-
-| Registry                                                                                          | Image                      |
-|---------------------------------------------------------------------------------------------------|----------------------------|
-| [Docker Hub](https://hub.docker.com/r/crazymax/flarum/)                                           | `crazymax/flarum`          |
-| [GitHub Container Registry](https://github.com/users/crazy-max/packages/container/package/flarum) | `ghcr.io/crazy-max/flarum` |
-
-Following platforms for this image are available:
-
-```
-$ docker buildx imagetools inspect crazymax/flarum --format "{{json .Manifest}}" | \
-  jq -r '.manifests[] | select(.platform.os != null and .platform.os != "unknown") | .platform | "\(.os)/\(.architecture)\(if .variant then "/" + .variant else "" end)"'
-
-linux/amd64
-linux/arm/v6
-linux/arm/v7
-linux/arm64
-```
-
-## Environment variables
-
-### General
-
-* `TZ`: The timezone assigned to the container (default `UTC`)
-* `PUID`: Flarum user id (default `1000`)
-* `PGID`: Flarum group id (default `1000`)
-* `MEMORY_LIMIT`: PHP memory limit (default `256M`)
-* `UPLOAD_MAX_SIZE`: Upload max size (default `16M`)
-* `NGINX_WORKER_PROCESSES`: Number of Nginx worker processes (default `auto`)
-* `CLEAR_ENV`: Clear environment in FPM workers (default `yes`)
-* `OPCACHE_MEM_SIZE`: PHP OpCache memory consumption (default `128`)
-* `LISTEN_IPV6`: Enable IPv6 for Nginx (default `true`)
-* `REAL_IP_FROM`: Trusted addresses that are known to send correct replacement addresses (default `0.0.0.0/32`)
-* `REAL_IP_HEADER`: Request header field whose value will be used to replace the client address (default `X-Forwarded-For`)
-* `LOG_IP_VAR`: Use another variable to retrieve the remote IP address for access [log_format](http://nginx.org/en/docs/http/ngx_http_log_module.html#log_format) on Nginx. (default `remote_addr`)
+* `TZ`：容器时区（默认 `UTC`）
+* `PUID` / `PGID`：Flarum 运行用户/组 id（默认 `1000`）
+* `MEMORY_LIMIT`：PHP 内存限制（默认 `256M`）
+* `UPLOAD_MAX_SIZE`：上传大小上限（默认 `16M`）
+* `NGINX_WORKER_PROCESSES`：nginx worker 进程数（默认 `auto`）
+* `CLEAR_ENV`：FPM worker 是否清理环境（默认 `yes`）
+* `OPCACHE_MEM_SIZE`：OpCache 内存（默认 `128`）
+* `LISTEN_IPV6`：nginx 是否监听 IPv6（默认 `true`）
+* `REAL_IP_FROM` / `REAL_IP_HEADER` / `LOG_IP_VAR`：反代真实 IP 相关
 
 ### Flarum
 
-* `FLARUM_DEBUG`: Enables or disables debug mode, used to troubleshoot issues (default `false`)
-* `FLARUM_BASE_URL`: The URL to your Flarum installation **required**
-* `FLARUM_FORUM_TITLE`: Flarum forum title, only used during first installation (default `Flarum Dockerized`)
-* `FLARUM_API_PATH`: Flarum api path (default `api`)
-* `FLARUM_ADMIN_PATH`: Flarum admin path (default `admin`)
-* `FLARUM_POWEREDBY_HEADER`: Set Flarum's `X-Powered-By` header (default `true`)
-* `FLARUM_REFERRER_POLICY`: Referrer policy (default `same-origin`)
-* `FLARUM_COOKIE_SAMESITE`: Set `SameSite` attribute of `Set-Cookie` (default `lax`)
-* `FLARUM_ANNOUNCEMENTS_DISABLED`: Disable Flarum announcements on the admin dashboard (default `false`)
+* `FLARUM_DEBUG`：调试模式（默认 `false`）
+* `FLARUM_BASE_URL`：站点地址 **必填**
+* `FLARUM_FORUM_TITLE`：论坛标题（仅首次安装使用）
+* `FLARUM_API_PATH`：api 路径（默认 `api`）
+* `FLARUM_ADMIN_PATH`：admin 路径（默认 `admin`）
+* `FLARUM_POWEREDBY_HEADER`：X-Powered-By 头（默认 `true`）
+* `FLARUM_REFERRER_POLICY`：Referrer 策略（默认 `same-origin`）
+* `FLARUM_COOKIE_SAMESITE`：Cookie SameSite（默认 `lax`）
+* `FLARUM_ANNOUNCEMENTS_DISABLED`：关闭后台公告（默认 `false`）
 
-### Sidecar cron
+### Sidecar 定时任务
 
-The following environment variables are only used if you run the container as
-["sidecar" cron mode](#scheduler):
+* `SIDECAR_CRON`：设为 `1` 启用 sidecar 模式（默认 `0`）
+* `CRON_SCHEDULE`：定时任务周期（默认 `* * * * *`）
 
-* `SIDECAR_CRON`: Set to `1` to enable sidecar cron mode (default `0`)
-* `CRON_SCHEDULE`: Periodically execute Flarum scheduler (default `* * * * *`)
+### 数据库
 
-### Database
+* `DB_HOST`：数据库主机 **必填**
+* `DB_PORT`：端口（默认 `3306`）
+* `DB_NAME`：库名（默认 `flarum`）
+* `DB_USER`：用户（默认 `flarum`）
+* `DB_PASSWORD`：密码
+* `DB_PREFIX`：表前缀（默认 `flarum_`）
+* `DB_NOPREFIX`：强制无前缀（默认 `false`）
+* `DB_TIMEOUT`：等待数据库就绪的秒数（默认 `60`）
 
-* `DB_HOST`: MySQL database hostname / IP address **required**
-* `DB_PORT`: MySQL database port (default `3306`)
-* `DB_NAME`: MySQL database name (default `flarum`)
-* `DB_USER`: MySQL user (default `flarum`)
-* `DB_PASSWORD`: MySQL password
-* `DB_PREFIX`: MySQL database prefix (default `flarum_`)
-* `DB_NOPREFIX`: Enforce no prefix for the MySQL database (default `false`)
-* `DB_TIMEOUT`: Time in seconds after which we stop trying to reach the MySQL server (useful for clusters, default `60`)
+> `DB_USER_FILE` / `DB_PASSWORD_FILE` 可用文件内容填充（Docker secrets）。
 
-> [!NOTE]
-> `DB_USER_FILE` and `DB_PASSWORD_FILE` can be used to fill in the value from a
-> file, especially for Docker's secrets feature.
+> 注意：镜像内置的数据库连通性检测使用 `mariadb` 客户端，默认面向
+> MySQL/MariaDB。若改用 PostgreSQL/SQLite，需自行调整 `rootfs/etc/cont-init.d/03-config.sh`
+> 中的检测逻辑，并相应安装 `php84-pdo_pgsql` / `php84-pdo_sqlite`。
 
-## Volumes
+## 卷
 
-* `/data`: Contains assets, extensions and storage
+* `/data`：包含 assets、extensions、storage
 
-> [!WARNING]
-> Note that the volume should be owned by the user/group with the specified
-> `PUID` and `PGID`. If you don't give the volume correct permissions, the
-> container may not start.
+> 卷需归属 `PUID:PGID` 指定的用户/组，否则容器可能启动失败。
 
-## Ports
+## 端口
 
-* `8000`: HTTP port
+* `8000`：HTTP
 
-## Usage
+## 使用
 
-### Docker Compose
+### Docker Compose（推荐）
 
-Docker compose is the recommended way to run this image. You can use the following
-[docker compose template](examples/compose/compose.yml), then run the container:
+参考仓库内的 [docker-compose.yml](docker-compose.yml) 与 [.env.example](.env.example)：
 
 ```bash
+cp .env.example .env
+# 编辑 .env，设置 FLARUM_BASE_URL 与数据库凭据
 docker compose up -d
 docker compose logs -f
 ```
 
-### Command line
+数据库默认随 compose 一起起一个 MariaDB 11.8。首次启动会创建管理员账号
+`flarum` / `flarum`，请尽快在后台修改。
 
-You can also use the following minimal command:
+### 命令行
 
 ```bash
 docker run -d -p 8000:8000 --name flarum \
   -v $(pwd)/data:/data \
   -e "DB_HOST=db" \
   -e "FLARUM_BASE_URL=http://127.0.0.1:8000" \
-  crazymax/flarum:latest
+  ghcr.io/yhxjlb/docker-flarum-new:2.0
 ```
 
-> [!WARNING]
-> `db` must be a running MySQL instance
+## 构建（GitHub Actions）
 
-## Upgrade
+本仓库通过 GitHub Actions（`.github/workflows/build.yml`）在 push / tag 时自动
+`docker buildx build` 多平台镜像并推送至 GHCR。本地也可用
+[docker-bake.hcl](docker-bake.hcl) 构建：
 
-You can upgrade Flarum automatically through the UI, it works well. But I
-recommend to recreate the container whenever I push an update:
+```bash
+docker buildx bake
+```
+
+## 管理扩展
+
+镜像不持久化 `/opt/flarum/composer.json`、`composer.lock`、`vendor` 之外的扩展；
+额外的直接 Composer 依赖记录在 `/data/extensions/list`，容器启动时自动重装。
+
+```bash
+docker compose exec flarum extension require fof/upload
+docker compose exec flarum extension list
+docker compose exec flarum extension remove fof/upload
+```
+
+## 升级
+
+Flarum 升级建议通过后台或 `php flarum` 命令完成；镜像更新则重新拉取：
 
 ```bash
 docker compose pull
 docker compose up -d
 ```
 
-## Notes
+## 许可
 
-### First launch
-
-On first launch, an initial administrator user will be created:
-
-| Login    | Password |
-|----------|----------|
-| `flarum` | `flarum` |
-
-### Scheduler
-
-Flarum scheduled tasks can be run with a "sidecar" container like in the
-[compose file](examples/compose/compose.yml). The sidecar uses the same image,
-database environment, and `/data` volume as the main `flarum` service, but only
-runs cron:
-
-```bash
-docker run -d --name flarum_cron \
-  -v $(pwd)/data:/data \
-  -e "DB_HOST=db" \
-  -e "DB_NAME=flarum" \
-  -e "DB_USER=flarum" \
-  -e "DB_PASSWORD=flarum" \
-  -e "FLARUM_BASE_URL=http://127.0.0.1:8000" \
-  -e "SIDECAR_CRON=1" \
-  crazymax/flarum:latest
-```
-
-Run only one cron sidecar per Flarum installation. The default
-`CRON_SCHEDULE` runs `php flarum schedule:run` every minute.
-
-### Manage extensions
-
-This image does not persist `/opt/flarum/composer.json`, `composer.lock`, or
-`vendor`. Instead, additional direct Composer requirements are persisted in
-`/data/extensions/list` and reinstalled when the container starts.
-
-Extensions installed or removed through Flarum's Extension Manager are
-synchronized to `/data/extensions/list` automatically. You can also manage
-[Flarum extensions](https://docs.flarum.org/extensions/) from the command line
-using the helper script included with this image:
-
-```shell
-docker compose exec flarum extension require <package> [<package> ...]
-```
-
-If no version constraint is provided, the helper requires `<package>:*`, which
-matches Flarum's recommendation for extensions that should track the latest
-version compatible with the installed Flarum core.
-
-To remove one or more extensions:
-
-```shell
-docker compose exec flarum extension remove <package> [<package> ...]
-```
-
-If you run Composer manually with scripts disabled, synchronize the persisted
-extension list afterwards:
-
-```shell
-docker compose exec flarum extension sync
-```
-
-To list all extensions:
-
-```shell
-docker compose exec flarum extension list
-```
-
-Example with [`fof/upload`](https://extiverse.com/extension/fof/upload) extension:
-
-```shell
-$ docker compose exec flarum extension require fof/upload
-$ docker compose exec flarum extension list
-fof/upload:*
-```
-
-### Sending mails with SMTP
-
-You can use our SMTP relay `msmtpd` service published on port `2500` and
-declared in our [`compose.yml`](examples/compose/compose.yml):
-
-![](.github/smtp-settings.png)
-
-## Contributing
-
-Want to contribute? Awesome! The most basic way to show your support is to star
-the project, or to raise issues. You can also support this project by [**becoming a sponsor on GitHub**](https://github.com/sponsors/crazy-max)
-or by making a [PayPal donation](https://www.paypal.me/crazyws) to ensure this
-journey continues indefinitely!
-
-Thanks again for your support, it is much appreciated! :pray:
-
-## License
-
-MIT. See `LICENSE` for more details.
+MIT。基于 crazy-max/docker-flarum，参见 [LICENSE](LICENSE)。
