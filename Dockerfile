@@ -74,8 +74,8 @@ RUN mkdir -p /opt/flarum \
   && IP_DIR="packages/v2.x/${FLARUM_VERSION#v}" \
   && git clone --depth 1 --filter=blob:none --sparse \
        https://github.com/flarum/installation-packages.git /tmp/ip \
-  && git -C /tmp/ip sparse-checkout set "$IP_DIR" \
-  && cp "/tmp/ip/$IP_DIR/flarum-${FLARUM_VERSION}-php${FLARUM_PHP}.zip" /tmp/flarum.zip \
+  && ZIP_SHA="$(git -C /tmp/ip ls-tree HEAD "$IP_DIR/flarum-${FLARUM_VERSION}-php${FLARUM_PHP}.zip" | awk '{print $3}')" \
+  && git -C /tmp/ip cat-file blob "$ZIP_SHA" > /tmp/flarum.zip \
   && rm -rf /tmp/ip \
   && case "$(head -c4 /tmp/flarum.zip)" in PK*) ;; *) echo "ERROR: downloaded file is not a zip archive" >&2; exit 1;; esac \
   && TMP="$(mktemp -d)" \
