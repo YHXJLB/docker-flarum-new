@@ -21,6 +21,7 @@ COPY --from=gosu /gosu /usr/local/bin/
 RUN apk --update --no-cache add \
     bash \
     curl \
+    git \
     jq \
     libgd \
     mysql-client \
@@ -70,7 +71,13 @@ ARG FLARUM_VERSION
 ARG FLARUM_PHP
 RUN mkdir -p /opt/flarum \
   && curl -sSL https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer \
-  && curl -sSL -o /tmp/flarum.zip "https://raw.githubusercontent.com/flarum/installation-packages/main/packages/v2.x/${FLARUM_VERSION#v}/flarum-${FLARUM_VERSION}-php${FLARUM_PHP}.zip" \
+  && IP_DIR="packages/v2.x/${FLARUM_VERSION#v}" \
+  && git clone --depth 1 --filter=blob:none --sparse \
+       https://github.com/flarum/installation-packages.git /tmp/ip \
+  && git -C /tmp/ip sparse-checkout set "$IP_DIR" \
+  && cp "/tmp/ip/$IP_DIR/flarum-${FLARUM_VERSION}-php${FLARUM_PHP}.zip" /tmp/flarum.zip \
+  && rm -rf /tmp/ip \
+  && case "$(head -c4 /tmp/flarum.zip)" in PK*) ;; *) echo "ERROR: downloaded file is not a zip archive" >&2; exit 1;; esac \
   && TMP="$(mktemp -d)" \
   && unzip -q /tmp/flarum.zip -d "$TMP/ext" \
   && SRC="$TMP/ext" \
